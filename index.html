@@ -175,8 +175,8 @@ section h2.sub{font-size:20px;margin-bottom:12px}
 
 
 
-    <div class="player"><iframe src="https://www.youtube.com/embed/XumBVpTDh6c" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
-    <a class="watch" href="https://youtube.com/shorts/XumBVpTDh6c" target="_blank" rel="noopener"><span class="play" aria-hidden="true">▶</span>ショートを見る<span class="len">約80秒</span></a>
+    <div class="player"><iframe id="yt-01" data-start="23" src="https://www.youtube.com/embed/XumBVpTDh6c?start=23&enablejsapi=1&playsinline=1&rel=0" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <a class="watch" href="https://youtu.be/XumBVpTDh6c?t=23" target="_blank" rel="noopener"><span class="play" aria-hidden="true">▶</span>23秒から見る<span class="len">約80秒</span></a>
     <p class="src">出典：FalconTV channel「実は長箱も横に立てると簡単に取れる！？橋渡し設定攻略」</p>
   </article>
 
@@ -198,11 +198,35 @@ section h2.sub{font-size:20px;margin-bottom:12px}
 
 
 
-    <div class="player"><iframe src="https://www.youtube.com/embed/PRfrDqS3c9w?start=14" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <div class="player"><iframe id="yt-02" data-start="14" src="https://www.youtube.com/embed/PRfrDqS3c9w?start=14&enablejsapi=1&playsinline=1&rel=0" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
     <a class="watch" href="https://youtu.be/PRfrDqS3c9w?t=14" target="_blank" rel="noopener"><span class="play" aria-hidden="true">▶</span>14秒から見る<span class="len">約60秒</span></a>
     <p class="src">出典：FalconTV channel「【クレーンゲーム】実はこの一手が超重要！プロ視点の攻略ポイントでフリーレンを攻略」</p>
   </article>
 
   </div>
+<script>
+// 埋め込みショートを data-start の秒数から再生する。
+// 再生開始時・リプレイ時に、開始位置より前にいたら開始位置へ移動する。
+(function(){
+  var frames=[].slice.call(document.querySelectorAll('.player iframe[data-start]'));
+  if(!frames.length) return;
+  window.onYouTubeIframeAPIReady=function(){
+    frames.forEach(function(f){
+      var start=parseFloat(f.dataset.start)||0;
+      if(!start) return;
+      new YT.Player(f.id,{events:{
+        onStateChange:function(e){
+          var p=e.target;
+          if(e.data===YT.PlayerState.PLAYING && p.getCurrentTime()<start-0.5){ p.seekTo(start,true); }
+          if(e.data===YT.PlayerState.ENDED){ p.seekTo(start,true); p.pauseVideo(); }
+        }
+      }});
+    });
+  };
+  var tag=document.createElement('script');
+  tag.src='https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+</script>
 </body>
 </html>
