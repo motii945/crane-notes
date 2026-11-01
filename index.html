@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>クレーン攻略帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: 筐体のガラス越しに覗く「攻略帳」。目次 → 1技=1章。各章は状態遷移の模式図(上から見た図)と「この形ならこの一手」表 */
+:root{
+  --bg:#eef0f5;
+  --panel:#ffffff;
+  --fg:#1a1c29;
+  --muted:#5d6278;
+  --line:#d5d9e4;
+  --bar:#e48ab3;
+  --bar-hi:#f6c4db;
+  --accent:#2c56e0;
+  --box:#fbfbfd;
+  --box-edge:#2a2d3d;
+  --box-side:#c9cde0;
+  --claw:#7a8096;
+  --ghost:#9aa0b8;
+  --hot:#e2452f;
+  --ok:#1d8a5b;
+  --font-display:"Meiryo","メイリオ","Hiragino Sans","Yu Gothic",sans-serif;
+  --font-body:"Meiryo","メイリオ","Hiragino Sans","Yu Gothic",sans-serif;
+  --font-pixel:"Meiryo","メイリオ","Hiragino Sans","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131c;--panel:#1a1d2a;--fg:#eceef6;--muted:#a0a6bd;--line:#2d3144;
+  --bar:#e17aa9;--bar-hi:#7d3b5c;--accent:#7f9cff;--box:#252a3b;--box-edge:#dfe3f2;--box-side:#3a4058;
+  --claw:#a7adc4;--ghost:#5e6582;--hot:#ff7a62;--ok:#4fcf95;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131c;--panel:#1a1d2a;--fg:#eceef6;--muted:#a0a6bd;--line:#2d3144;
+  --bar:#e17aa9;--bar-hi:#7d3b5c;--accent:#7f9cff;--box:#252a3b;--box-edge:#dfe3f2;--box-side:#3a4058;
+  --claw:#a7adc4;--ghost:#5e6582;--hot:#ff7a62;--ok:#4fcf95;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;text-wrap:balance;margin:0;line-height:1.3}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pix{font-family:var(--font-pixel);letter-spacing:.06em}
+
+/* header */
+.mast{display:flex;flex-direction:column;gap:10px}
+.mast .pix{color:var(--muted);font-size:13px}
+.mast h1{font-size:clamp(30px,6vw,46px)}
+.mast p{margin:0;color:var(--muted);max-width:62ch}
+.rods{height:14px;display:flex;flex-direction:column;justify-content:space-between;max-width:260px}
+.rods i{display:block;height:4px;border-radius:4px;background:var(--bar)}
+
+/* index */
+.index{display:flex;flex-direction:column;gap:10px}
+.index h2{font-size:15px;font-family:var(--font-pixel);color:var(--muted);letter-spacing:.1em}
+.index ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.index li{border-bottom:1px solid var(--line)}
+.index a{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:baseline;padding:12px 4px;text-decoration:none;color:var(--fg)}
+.index a:hover .t{color:var(--accent)}
+.index .no{font-family:var(--font-pixel);color:var(--bar);font-size:18px}
+.index .t{font-weight:700;min-width:0}
+.index .tag{font-size:12px;color:var(--muted);white-space:nowrap}
+.index li.soon{color:var(--muted);padding:12px 4px;font-size:14px}
+
+/* chapter */
+.chapter{display:flex;flex-direction:column;gap:28px}
+.ch-head{display:flex;flex-direction:column;gap:10px}
+.ch-head .pix{color:var(--bar);font-size:14px}
+.ch-head h2{font-size:clamp(24px,4.4vw,34px)}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:2px 10px;color:var(--muted)}
+.chip b{color:var(--fg);font-weight:700}
+
+.lead{display:block;max-width:560px}
+.lead p{margin:0 0 10px}
+.goal{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.goal h3{font-size:16px}
+.goal ol{margin:0;padding-left:1.3em;font-size:14px}
+.goal li::marker{font-family:var(--font-pixel);color:var(--bar)}
+
+/* flow strip */
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.flow span{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 9px;white-space:nowrap}
+.flow span.end{border-color:var(--ok);color:var(--ok);font-weight:700}
+.flow em{font-style:normal;color:var(--muted)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.step figure{margin:0;background:color-mix(in srgb,var(--bg) 70%,var(--panel));border-bottom:1px solid var(--line)}
+.step svg{display:block;width:100%;height:auto}
+.step .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.step .k{font-family:var(--font-pixel);font-size:12px;color:var(--muted);letter-spacing:.08em}
+.step h3{font-size:17px}
+.step p{margin:0;font-size:14px}
+.step .warn{font-size:13px;color:var(--hot)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:18px;height:6px;border-radius:3px;display:inline-block}
+
+/* decision table */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.06em}
+tr:last-child td{border-bottom:none}
+td.state{font-weight:700;white-space:nowrap}
+td .pix{color:var(--bar);margin-right:6px}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.note{display:flex;flex-direction:column;gap:6px}
+.note h3{font-size:16px}
+.note ul{margin:0;padding-left:1.2em;font-size:14px}
+.note .by{font-size:12px;color:var(--muted)}
+
+.src{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+footer{font-size:13px;color:var(--muted)}
+section h2.sub{font-size:20px;margin-bottom:12px}
+
+@media (max-width:720px){.lead{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.step svg .move{animation:nudge 2.4s ease-in-out infinite}}
+@keyframes nudge{0%,100%{opacity:.45}50%{opacity:1}}
+.watch{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;padding:10px 18px 10px 12px;border-radius:999px;background:var(--fg);color:var(--bg);text-decoration:none;font-weight:700;font-size:15px}
+.watch:hover{background:var(--accent)}
+.watch .play{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--bar);color:#fff;font-size:11px}
+.watch .len{font-weight:400;font-size:12px;opacity:.75}
+.chapter{gap:16px}
+.chapter+.chapter{border-top:1px solid var(--line);padding-top:32px}
+.src{border-top:none;padding-top:0}
+.player{width:100%;max-width:340px;aspect-ratio:9/16;border-radius:14px;overflow:hidden;background:#000}
+.player iframe{width:100%;height:100%;border:0;display:block}
+.watch{font-size:13px;padding:6px 14px 6px 8px}
+.watch .play{width:20px;height:20px}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <span class="pix">CRANE GAME FIELD NOTES</span>
+    <h1>クレーン攻略帳</h1>
+    <p>景品の「今の形」から「次に作る形」と「その一手」を逆引きするためのまとめ。動画1本＝1章で追加していきます。</p>
+    <div class="rods" aria-hidden="true"><i></i><i></i></div>
+  </header>
+
+  <nav class="index" aria-label="目次">
+    <h2>INDEX</h2>
+    <ol>
+      <li><a href="#hashi-01"><span class="no">01</span><span class="t">橋渡し｜長箱が縦向きになったときの対処</span><span class="tag">橋渡し・長箱</span></a></li>
+      <li><a href="#hashi-02"><span class="no">02</span><span class="t">橋渡し｜左手前の角だけバーに残ったときの対処</span><span class="tag">橋渡し・箱</span></a></li>
+    </ol>
+  </nav>
+
+  <article class="chapter" id="hashi-01">
+    <div class="ch-head">
+      <span class="pix">No.01 / 橋渡し設定</span>
+      <h2>長箱が縦向きになったら、横に立てて左奥へ投げる</h2>
+    </div>
+
+    <div class="lead">
+      <aside class="goal">
+        <h3>この章のゴール形</h3>
+        <ol>
+          <li>箱を<b>横に立てる</b>（接地面を細くする）</li>
+          <li>箱を<b>斜め</b>にして、左手前の角をバーの奥側へ入れる</li>
+          <li>角が入った側から<b>左奥へ放り込み</b>、橋の間に落とす</li>
+        </ol>
+      </aside>
+    </div>
+
+
+
+
+
+    <div class="player"><iframe src="https://www.youtube.com/embed/XumBVpTDh6c" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <a class="watch" href="https://youtube.com/shorts/XumBVpTDh6c" target="_blank" rel="noopener"><span class="play" aria-hidden="true">▶</span>ショートを見る<span class="len">約80秒</span></a>
+    <p class="src">出典：FalconTV channel「実は長箱も横に立てると簡単に取れる！？橋渡し設定攻略」</p>
+  </article>
+
+  <article class="chapter" id="hashi-02">
+    <div class="ch-head">
+      <span class="pix">No.02 / 橋渡し設定</span>
+      <h2>左手前の角だけ残ったら、左奥を軽く上げてから側面で回す</h2>
+    </div>
+
+    <div class="lead">
+      <aside class="goal">
+        <h3>この章のゴール形</h3>
+        <ol>
+          <li>左奥の角を<b>軽く引き上げ</b>、残っている左手前の角を<b>バーの内側へ抜く</b></li>
+          <li><b>側面から回して</b>、箱を落とし口へ滑り込ませる</li>
+        </ol>
+      </aside>
+    </div>
+
+
+
+    <div class="player"><iframe src="https://www.youtube.com/embed/PRfrDqS3c9w?start=14" title="YouTube ショート" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>
+    <a class="watch" href="https://youtu.be/PRfrDqS3c9w?t=14" target="_blank" rel="noopener"><span class="play" aria-hidden="true">▶</span>14秒から見る<span class="len">約60秒</span></a>
+    <p class="src">出典：FalconTV channel「【クレーンゲーム】実はこの一手が超重要！プロ視点の攻略ポイントでフリーレンを攻略」</p>
+  </article>
+
+  </div>
+</body>
+</html>
